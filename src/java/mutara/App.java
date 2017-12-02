@@ -6,7 +6,12 @@ import java.util.Map;
 
 public class App {
     public static void main(String[] args){
-        Map<DBDataGetter.user, List<List<Event>>> data = new DBDataGetter("dbusernam", "dbpassword").getUserSequences();
+        DBDataGetter db = new DBDataGetter("sshusername: look at lab 2 for what these credentials should be",
+                "sshpassword",
+                "dbusernam",
+                "dbpassword");
+        List<String> list = db.getDrugNames();
+        Map<DBDataGetter.user, List<List<Event>>> data = db.getUserSequences("MORPHINE");
         List<List<Event>> userSequences = data.get(DBDataGetter.user.USER);
         List<List<Event>> nonUserSequences = data.get(DBDataGetter.user.NONUSER);
         /*

@@ -4,6 +4,10 @@ import java.time.LocalDate;
 
 public abstract class Event {
     private LocalDate date;
+
+    public Event(LocalDate date) {
+        this.date = date;
+    }
     // Whatever else is communal
 
     public LocalDate getDate() {
