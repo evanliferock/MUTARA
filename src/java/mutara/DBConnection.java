@@ -9,6 +9,11 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
+/*
+ * Get the JAR to make this work from http://www.jcraft.com/jsch/
+ * Add it to lib folder in project directory and add the folder as a library
+ * in the IDE
+ */
 public class DBConnection{
     private Connection con;
     private Session session;
