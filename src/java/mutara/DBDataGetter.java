@@ -55,10 +55,9 @@ public class DBDataGetter {
             setupDiagnosis();
             dbConnection.closeConnection();
 
-            sequences = new ArrayList<>();
-            Collections.addAll(map.values());
+            sequences = new ArrayList<>(map.values());
 
-            sequences = sortEvents(sequences);
+            sortSequences();
         }
     }
 
@@ -139,14 +138,92 @@ public class DBDataGetter {
     }
 
 
-    private List<List<Event>> sortEvents(List<List<Event>> events){
-        // TODO
-        return new ArrayList<>();
+    private void sortSequences(){
+//        this.numbers = values;
+//        number = values.length;
+        List<Event> helper;
+
+        for(List<Event> sequence : sequences) {
+            helper = new ArrayList<>(sequence);
+            mergesort(0, sequence.size() - 1, sequence, helper);
+        }
+    }
+
+    // From http://www.vogella.com/tutorials/JavaAlgorithmsMergesort/article.html
+    private void mergesort(int low, int high, List<Event> events, List<Event> helper) {
+        // check if low is smaller than high, if not then the array is sorted
+        if (low < high) {
+            // Get the index of the element which is in the middle
+            int middle = low + (high - low) / 2;
+            // Sort the left side of the array
+            mergesort(low, middle, events, helper);
+            // Sort the right side of the array
+            mergesort(middle + 1, high, events, helper);
+            // Combine them both
+            merge(low, middle, high, events, helper);
+        }
+    }
+
+    // From http://www.vogella.com/tutorials/JavaAlgorithmsMergesort/article.html
+    private void merge(int low, int middle, int high, List<Event> events, List<Event> helper) {
+
+        // Copy both parts into the helper array
+        for (int i = low; i <= high; i++) {
+            helper.set(i,events.get(i));
+        }
+
+        int i = low;
+        int j = middle + 1;
+        int k = low;
+        // Copy the smallest values from either the left or the right side back
+        // to the original array
+        while (i <= middle && j <= high) {
+            // i is before j or (i is the same day as j and i is a drug) then i goes before j else otherwise
+            if (helper.get(i).getDate().compareTo(helper.get(j).getDate()) < 0 ||
+                    (helper.get(i).getDate().equals(helper.get(j).getDate()) &&
+                            helper.get(i) instanceof Drug)) {
+                events.set(k, helper.get(i));
+                i++;
+            } else {
+                events.set(k, helper.get(j));
+                j++;
+            }
+            k++;
+        }
+        // Copy the rest of the left side of the array into the target array
+        while (i <= middle) {
+            events.set(k, helper.get(i));
+            k++;
+            i++;
+        }
+        // Since we are sorting in-place any leftover elements from the right side
+        // are already at the right position.
+
     }
 
 
     private Map<user ,List<List<Event>>> seperateByDrug(String drugName){
-        // TODO
-        return new HashMap<>();
+        Map<user, List<List<Event>>> map = null;
+        if(sequences != null) {
+            map = new HashMap<>();
+            map.put(user.USER, new ArrayList<>());
+            map.put(user.NONUSER, new ArrayList<>());
+            boolean isUser;
+            for (List<Event> list : sequences) {
+                isUser = false;
+                for (Event event : list) {
+                    if (event instanceof Drug && ((Drug) event).getDrugName().equals(drugName)) {
+                        isUser = true;
+                        break;
+                    }
+                }
+                if(isUser)
+                    map.get(user.USER).add(list);
+                else
+                    map.get(user.NONUSER).add(list);
+            }
+
+        }
+        return map;
     }
 }

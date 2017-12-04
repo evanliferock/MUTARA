@@ -11,7 +11,7 @@ public class App {
                 "dbusernam",
                 "dbpassword");
         List<String> list = db.getDrugNames();
-        Map<DBDataGetter.user, List<List<Event>>> data = db.getUserSequences("MORPHINE");
+        Map<DBDataGetter.user, List<List<Event>>> data = db.getUserSequences("IRON");
         List<List<Event>> userSequences = data.get(DBDataGetter.user.USER);
         List<List<Event>> nonUserSequences = data.get(DBDataGetter.user.NONUSER);
         /*
