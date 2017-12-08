@@ -1,5 +1,6 @@
 package mutara;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,8 +19,12 @@ public class Functions {
                 period, the reference period, the period between the first A and the starting
                 point of the reference period, and the control period as illustrated in Fig. 1.
 */
-    public static ParameterHolder setupParameters(){
-        return new ParameterHolder();
+    public static ParameterHolder setupParameters(String drug, List<String> diagnosis){
+        ParameterHolder param = new ParameterHolder();
+        param.setA(drug);
+        List<String> list = new ArrayList<>(diagnosis);
+        param.setCs(list);
+        return param;
     }
 
 
@@ -29,7 +34,45 @@ public class Functions {
         based on the user-based exclusion with respect to the antecedent A;
     */
     public static List<List<Event>> userBasedExclusion(ParameterHolder params, List<List<Event>> userSequences){
-        return new ArrayList<>();
+        List<List<Event>> subsequences = new ArrayList<>();
+        List<Diagnosis> priorDiagnosis;
+        List<Event> currentList;
+        Event e;
+        for (List<Event> list : userSequences) {
+            currentList = new ArrayList<>(list);
+            priorDiagnosis = new ArrayList<>();
+
+            // before drug of interest
+            for(int i = 0; i < currentList.size(); i++) {
+                e = currentList.get(i);
+                if (e instanceof Diagnosis) {
+                    priorDiagnosis.add((Diagnosis) e);
+                } else if (((Drug) e).getDrugName().equals(params.getA())){
+                    break;
+                } else
+                    currentList.remove(i--);
+            }
+
+            // after drug of interest
+            for(int i = 0; i < currentList.size(); i++){
+                e = currentList.get(i);
+                if(e instanceof Diagnosis && isContained((Diagnosis)e, priorDiagnosis))
+                    currentList.remove(i--);
+                else if (e instanceof Drug && !((Drug) e).getDrugName().equals(params.getA())){
+                    currentList.remove(i--);
+                }
+
+            }
+            subsequences.add(currentList);
+        }
+        return subsequences;
+    }
+
+    public static boolean isContained(Diagnosis d, List<Diagnosis> dList){
+        for(Diagnosis diagnosis : dList)
+            if(diagnosis.getSymptomName().equals(d.getSymptomName()))
+                return true;
+        return false;
     }
 
 
@@ -37,7 +80,14 @@ public class Functions {
         3. Choose nonuser subsequences from the control period from nonuser sequences;
     */
     public static List<List<Event>> nonUserSubsectioning(ParameterHolder params, List<List<Event>> nonUserSequences){
-        return new ArrayList<>();
+        List<List<Event>> subsequences = new ArrayList<>();
+        List<Event> currentList;
+        Event e;
+        for(List<Event> list : nonUserSequences){
+            currentList = new ArrayList<>(list);
+            subsequences.add(currentList);
+        }
+        return subsequences;
     }
 
 
@@ -46,7 +96,13 @@ public class Functions {
     */
     public static List<DiagnosisScore> scoreEvents(ParameterHolder params, List<List<Event>> userSubsequences,
                                                    List<List<Event>> nonUserSubsequences){
-        return new ArrayList<>();
+        List<DiagnosisScore> scoreList= new ArrayList<>();
+        for(String d : params.getCs()){
+            SupportCalculator s = new SupportCalculator(userSubsequences, nonUserSubsequences, params.getA(), d);
+            scoreList.add(s.calculateUnexLeverage());
+        }
+
+        return scoreList;
     }
 
 
@@ -55,6 +111,27 @@ public class Functions {
                 the top 10 UTARs with high unexpected-leverage.
     */
     public static void displayTopTen(List<DiagnosisScore> scores){
-        System.out.println("Shit to do!");
+        List<DiagnosisScore> newList = new ArrayList<>(scores);
+        List<DiagnosisScore> topTen = new ArrayList<>();
+        int removeIndex;
+        DiagnosisScore score, topScore;
+        for(int i = 0; i < (newList.size() > 10 ? 10 : newList.size()); i++) {
+            topScore = newList.get(0);
+            removeIndex = 0;
+            for (int j = 0; j < newList.size(); j++) {
+                score = newList.get(j);
+                if(score.getUnexpectedLeverage() > topScore.getUnexpectedLeverage()){
+                    topScore = score;
+                    removeIndex = j;
+                }
+            }
+            topTen.add(topScore);
+            newList.remove(removeIndex);
+        }
+
+        for (int i = 1; i <= topTen.size(); i++) {
+            score = topTen.get(i - 1);
+            System.out.println(i + ": " + score.getA() + " => " + score.getC() + " Unexpected Leverage: " + score.getUnexpectedLeverage());
+        }
     }
 }

@@ -1,19 +1,25 @@
 package mutara;
 
 public class DiagnosisScore {
-    private Diagnosis C;
+    private String A;
+    private String C;
     private double unexpectedLeverage;
 
-    public DiagnosisScore(Diagnosis c, double unexpectedLeverage) {
+    public DiagnosisScore(String a, String c, double unexpectedLeverage) {
+        A = a;
         C = c;
         this.unexpectedLeverage = unexpectedLeverage;
     }
 
-    public Diagnosis getC() {
+    public String getA() {
+        return A;
+    }
+
+    public String getC() {
         return C;
     }
 
-    public void setC(Diagnosis c) {
+    public void setC(String c) {
         C = c;
     }
 

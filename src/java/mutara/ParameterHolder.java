@@ -19,8 +19,8 @@ public class ParameterHolder {
                     period, the reference period, the period between the first A and the starting
                     point of the reference period, and the control period as illustrated in Fig. 1.
     */
-    private Drug A; // antecedent A
-    private List<Diagnosis> Cs; // possible candidates for the consequent
+    private String A; // antecedent A
+    private List<String> Cs; // possible candidates for the consequent
     private LocalDate tS; // A study period is specified by [tS, tE] according to the antecedent A
     private LocalDate tE; // A study period is specified by [tS, tE] according to the antecedent A
     private Period Te; // the effect period
@@ -28,19 +28,19 @@ public class ParameterHolder {
     private Period Tb; // the period between the first A and the starting point of the reference period
     private Period Tc; // the control period
 
-    public Drug getA() {
+    public String getA() {
         return A;
     }
 
-    public void setA(Drug a) {
+    public void setA(String a) {
         A = a;
     }
 
-    public List<Diagnosis> getCs() {
+    public List<String> getCs() {
         return Cs;
     }
 
-    public void setCs(List<Diagnosis> cs) {
+    public void setCs(List<String> cs) {
         Cs = cs;
     }
 

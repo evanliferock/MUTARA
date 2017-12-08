@@ -21,6 +21,13 @@ public class DBDataGetter {
         diagnosisNames = new ArrayList<>();
     }
 
+    public DBDataGetter(DBConnection dbConnection){
+        this.dbConnection = dbConnection;
+        sequences = null;
+        drugNames = new ArrayList<>();
+        diagnosisNames = new ArrayList<>();
+    }
+
 
     public List<String> getDrugNames() {
         setupData();
@@ -53,7 +60,6 @@ public class DBDataGetter {
             getDiagnosis(map);
             setupDrugs();
             setupDiagnosis();
-            dbConnection.closeConnection();
 
             sequences = new ArrayList<>(map.values());
 

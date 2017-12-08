@@ -1,19 +1,22 @@
 package mutara;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public class App {
     public static void main(String[] args){
-        DBDataGetter db = new DBDataGetter("sshusername: look at lab 2 for what these credentials should be",
+        DBConnection dbConnection = new DBConnection("sshusername: look at lab 2 for what these credentials should be",
                 "sshpassword",
                 "dbusernam",
                 "dbpassword");
-        List<String> list = db.getDrugNames();
-        Map<DBDataGetter.user, List<List<Event>>> data = db.getUserSequences("IRON");
-        List<List<Event>> userSequences = data.get(DBDataGetter.user.USER);
-        List<List<Event>> nonUserSequences = data.get(DBDataGetter.user.NONUSER);
+        DBDataGetter db = new DBDataGetter(dbConnection);
+        PatientCharacteristics.patient_Data_Characteristics(dbConnection);
+        List<String> drugs = db.getDrugNames();
+        List<String> diagnosis = db.getDiagnosisNames();
+        dbConnection.closeConnection();
         /*
         1. Initialise parameters, such as the antecedent A, event types of interest, the study
         period [tS, tE], time period lengths Te, Tr, Tb, and Tc.
@@ -28,25 +31,59 @@ public class App {
                     period, the reference period, the period between the first A and the starting
                     point of the reference period, and the control period as illustrated in Fig. 1.
         */
-        ParameterHolder params = Functions.setupParameters();
-        /*
-        2. Prepare user subsequences from user sequences which have A during the study
-        period: choose event types from the hazard period, and exclude some of them
-        based on the user-based exclusion with respect to the antecedent A;
-        */
-        List<List<Event>> userSubsequences = Functions.userBasedExclusion(params, userSequences);
-        /*
-        3. Choose nonuser subsequences from the control period from nonuser sequences;
-        */
-        List<List<Event>> nonUserSubsequences = Functions.nonUserSubsectioning(params, nonUserSequences);
-        /*
-        4. Calculate supports and unexpected-leverage of each event type of interest;
-        */
-        List<DiagnosisScore> scoredEvents = Functions.scoreEvents(params, userSubsequences, nonUserSubsequences);
-        /*
-        5. Rank the event types in the descending order of unexpected-leverage, and return
-                the top 10 UTARs with high unexpected-leverage.
-        */
+        Scanner in = new Scanner(System.in);
+        System.out.println("How many different randomly selected Drugs would you like to test?");
+        System.out.println("There are " + drugs.size() + " different drugs. Some of these drugs are bad data");
+        System.out.print("Input an Integer: ");
+        int numDrugs = Math.abs(in.nextInt());
+        numDrugs = (numDrugs > drugs.size() ? drugs.size() : numDrugs);
+
+        System.out.println("How many different randomly selected diagnosis would you like to test?");
+        System.out.println("There are " + diagnosis.size() + " different diagnosis. Some of these diagnosis are bad data");
+        System.out.print("Input an Integer: ");
+        int numDiagnosis = Math.abs(in.nextInt());
+        numDiagnosis = (numDiagnosis > diagnosis.size() ? diagnosis.size() : numDiagnosis);
+
+        Collections.shuffle(drugs);
+        Collections.shuffle(diagnosis);
+
+        List<String> drugNamesToCheck = new ArrayList<>();
+
+        for(int i = 0; i < numDrugs; i++){
+            drugNamesToCheck.add(drugs.get(i));
+        }
+
+        List<String> diagnosisNamesToCheck = new ArrayList<>();
+
+        for(int i = 0; i < numDiagnosis; i++){
+            diagnosisNamesToCheck.add(diagnosis.get(i));
+        }
+
+        List<ParameterHolder> theParams = new ArrayList<>();
+
+        for(String drug : drugNamesToCheck) {
+            theParams.add(Functions.setupParameters(drug, diagnosisNamesToCheck));
+        }
+
+        List<DiagnosisScore> scoredEvents = new ArrayList<>();
+
+        ExecutorService executorService = Executors.newFixedThreadPool(100);
+        List<Future<List<DiagnosisScore>>> upcomingScores = Collections.synchronizedList(new ArrayList<>());
+        for(ParameterHolder params : theParams) {
+            upcomingScores.add(executorService.submit(new ScoredEventGetter(params, db)));
+        }
+
+        try {
+            executorService.shutdown();
+            executorService.awaitTermination(3, TimeUnit.HOURS);
+            for (Future<List<DiagnosisScore>> future : upcomingScores) {
+                scoredEvents.addAll(future.get());
+            }
+        } catch (Exception e) {
+            System.err.println("Error on concurrent shutdown: " + e);
+        }
+
         Functions.displayTopTen(scoredEvents);
+
     }
 }
