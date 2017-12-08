@@ -61,7 +61,7 @@ public class DBDataGetter {
             setupDrugs();
             setupDiagnosis();
 
-            sequences = new ArrayList<>(map.values());
+            sequences = Collections.synchronizedList(new ArrayList<>(map.values()));
 
             sortSequences();
         }

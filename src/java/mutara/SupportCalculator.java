@@ -25,6 +25,7 @@ public class SupportCalculator {
         for(Event e  : row){
             if(e instanceof Diagnosis && ((Diagnosis) e).getSymptomName().equals(reaction)){
                 supportUnExC++;
+                break;
             }
         }
     }
@@ -35,6 +36,7 @@ public class SupportCalculator {
             if(e instanceof Diagnosis && ((Diagnosis) e).getSymptomName().equals(reaction)){
                 supportUnExC++;
                 supportUnExAC++;
+                break;
             }
         }
     }
