@@ -15,8 +15,7 @@ public class App {
         DBDataGetter db = new DBDataGetter(dbConnection);
         PatientCharacteristics.patient_Data_Characteristics(dbConnection);
         List<String> drugs = db.getDrugNames();
-        List<String> diagnosis = db.getDiagnosisNames();
-        dbConnection.closeConnection();
+
         /*
         1. Initialise parameters, such as the antecedent A, event types of interest, the study
         period [tS, tE], time period lengths Te, Tr, Tb, and Tc.
@@ -38,14 +37,7 @@ public class App {
         int numDrugs = Math.abs(in.nextInt());
         numDrugs = (numDrugs > drugs.size() ? drugs.size() : numDrugs);
 
-        System.out.println("How many different randomly selected diagnosis would you like to test?");
-        System.out.println("There are " + diagnosis.size() + " different diagnosis. Some of these diagnosis are bad data");
-        System.out.print("Input an Integer: ");
-        int numDiagnosis = Math.abs(in.nextInt());
-        numDiagnosis = (numDiagnosis > diagnosis.size() ? diagnosis.size() : numDiagnosis);
-
         Collections.shuffle(drugs);
-        Collections.shuffle(diagnosis);
 
         List<String> drugNamesToCheck = new ArrayList<>();
 
@@ -53,24 +45,13 @@ public class App {
             drugNamesToCheck.add(drugs.get(i));
         }
 
-        List<String> diagnosisNamesToCheck = new ArrayList<>();
-
-        for(int i = 0; i < numDiagnosis; i++){
-            diagnosisNamesToCheck.add(diagnosis.get(i));
-        }
-
-        List<ParameterHolder> theParams = new ArrayList<>();
-
-        for(String drug : drugNamesToCheck) {
-            theParams.add(Functions.setupParameters(drug, diagnosisNamesToCheck));
-        }
-
         List<DiagnosisScore> scoredEvents = new ArrayList<>();
 
-        ExecutorService executorService = Executors.newFixedThreadPool(100);
-        List<Future<List<DiagnosisScore>>> upcomingScores = Collections.synchronizedList(new ArrayList<>());
-        for(ParameterHolder params : theParams) {
-            upcomingScores.add(executorService.submit(new ScoredEventGetter(params, db)));
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
+        List<Future<List<DiagnosisScore>>> upcomingScores = new ArrayList<>();
+
+        for(String drug : drugNamesToCheck) {
+            upcomingScores.add(executorService.submit(new ScoredEventGetter(drug, db)));
         }
 
         try {
@@ -82,6 +63,8 @@ public class App {
         } catch (Exception e) {
             System.err.println("Error on concurrent shutdown: " + e);
         }
+
+        dbConnection.closeConnection();
 
         Functions.displayTopTen(scoredEvents);
 

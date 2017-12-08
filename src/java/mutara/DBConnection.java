@@ -4,10 +4,7 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.*;
 
 /*
  * Get the JAR to make this work from http://www.jcraft.com/jsch/
@@ -62,6 +59,24 @@ public class DBConnection{
             }
             isSetup = true;
         }
+    }
+
+    public ResultSet runQuery(String query, String drug){
+        setupConnection();
+        PreparedStatement s = null;
+        try {
+            s = con.prepareStatement(query);
+            s.setString(1, drug);
+        } catch (Exception e) {
+            System.err.println("Error on getting a Statement: " + e);
+        }
+        ResultSet r = null;
+        try {
+            r = s.executeQuery();
+        } catch (Exception e) {
+            System.err.println("Error on running query with drug: " + drug + ", " + e);
+        }
+        return r;
     }
 
 

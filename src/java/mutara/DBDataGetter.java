@@ -12,20 +12,17 @@ public class DBDataGetter {
     // stores the sequences once they are retrieved from the db
     private List<List<Event>> sequences;
     private List<String> drugNames;
-    private List<String> diagnosisNames;
 
     public DBDataGetter(String sshUsername, String sshPassword, String dbUsername,String dbPassword) {
         this.dbConnection = new DBConnection(sshUsername, sshPassword, dbUsername, dbPassword);
         sequences = null;
         drugNames = new ArrayList<>();
-        diagnosisNames = new ArrayList<>();
     }
 
     public DBDataGetter(DBConnection dbConnection){
         this.dbConnection = dbConnection;
         sequences = null;
         drugNames = new ArrayList<>();
-        diagnosisNames = new ArrayList<>();
     }
 
 
@@ -34,10 +31,6 @@ public class DBDataGetter {
         return drugNames;
     }
 
-    public List<String> getDiagnosisNames() {
-        setupData();
-        return diagnosisNames;
-    }
 
 
     /**
@@ -51,6 +44,21 @@ public class DBDataGetter {
         return seperateByDrug(drugName);
     }
 
+    public List<String> getReactionsForDrug(String drug){
+        setupData();
+        String newDrug = drug.replace("'", "\\'");
+        List<String> reactions = new ArrayList<>();
+        ResultSet r = dbConnection.runQuery("SELECT DISTINCT(PT) FROM DRUG d, REACTION r " +
+                "WHERE d.ISR = r.ISR AND d.DRUGNAME = ?;", drug);
+        try {
+            while (r.next())
+                reactions.add(r.getString("PT"));
+        } catch (Exception e) {
+            System.err.println("Error getting reactions for: " + drug + ", " + e);
+        }
+        return reactions;
+    }
+
 
     private void setupData(){
         if(sequences == null) {
@@ -59,7 +67,6 @@ public class DBDataGetter {
             getDrugs(map);
             getDiagnosis(map);
             setupDrugs();
-            setupDiagnosis();
 
             sequences = Collections.synchronizedList(new ArrayList<>(map.values()));
 
@@ -75,17 +82,6 @@ public class DBDataGetter {
                 drugNames.add(r.getString("DRUGNAME"));
         } catch (Exception e) {
             System.err.println("Error Setting up drugs: " + e);
-        }
-    }
-
-
-    private void setupDiagnosis(){
-        ResultSet r = dbConnection.runQuery("SELECT DISTINCT(PT) from REACTION;");
-        try {
-            while (r.next())
-                diagnosisNames.add(r.getString("PT"));
-        } catch (Exception e) {
-            System.err.println("Error Setting up diagnosis: " + e);
         }
     }
 

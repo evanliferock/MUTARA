@@ -19,21 +19,13 @@ public class Functions {
                 period, the reference period, the period between the first A and the starting
                 point of the reference period, and the control period as illustrated in Fig. 1.
 */
-    public static ParameterHolder setupParameters(String drug, List<String> diagnosis){
-        ParameterHolder param = new ParameterHolder();
-        param.setA(drug);
-        List<String> list = new ArrayList<>(diagnosis);
-        param.setCs(list);
-        return param;
-    }
-
 
     /*
         2. Prepare user subsequences from user sequences which have A during the study
         period: choose event types from the hazard period, and exclude some of them
         based on the user-based exclusion with respect to the antecedent A;
     */
-    public static List<List<Event>> userBasedExclusion(ParameterHolder params, List<List<Event>> userSequences){
+    public static List<List<Event>> userBasedExclusion(String drug, List<List<Event>> userSequences){
         List<List<Event>> subsequences = new ArrayList<>();
         List<Diagnosis> priorDiagnosis;
         List<Event> currentList;
@@ -47,7 +39,7 @@ public class Functions {
                 e = currentList.get(i);
                 if (e instanceof Diagnosis) {
                     priorDiagnosis.add((Diagnosis) e);
-                } else if (((Drug) e).getDrugName().equals(params.getA())){
+                } else if (((Drug) e).getDrugName().equals(drug)){
                     break;
                 } else
                     currentList.remove(i--);
@@ -58,7 +50,7 @@ public class Functions {
                 e = currentList.get(i);
                 if(e instanceof Diagnosis && isContained((Diagnosis)e, priorDiagnosis))
                     currentList.remove(i--);
-                else if (e instanceof Drug && !((Drug) e).getDrugName().equals(params.getA())){
+                else if (e instanceof Drug && !((Drug) e).getDrugName().equals(drug)){
                     currentList.remove(i--);
                 }
 
@@ -79,7 +71,7 @@ public class Functions {
     /*
         3. Choose nonuser subsequences from the control period from nonuser sequences;
     */
-    public static List<List<Event>> nonUserSubsectioning(ParameterHolder params, List<List<Event>> nonUserSequences){
+    public static List<List<Event>> nonUserSubsectioning(List<List<Event>> nonUserSequences){
         List<List<Event>> subsequences = new ArrayList<>();
         List<Event> currentList;
         Event e;
@@ -94,11 +86,11 @@ public class Functions {
     /*
         4. Calculate supports and unexpected-leverage of each event type of interest;
     */
-    public static List<DiagnosisScore> scoreEvents(ParameterHolder params, List<List<Event>> userSubsequences,
+    public static List<DiagnosisScore> scoreEvents(String drug, List<String> reactions, List<List<Event>> userSubsequences,
                                                    List<List<Event>> nonUserSubsequences){
         List<DiagnosisScore> scoreList= new ArrayList<>();
-        for(String d : params.getCs()){
-            SupportCalculator s = new SupportCalculator(userSubsequences, nonUserSubsequences, params.getA(), d);
+        for(String reaction : reactions){
+            SupportCalculator s = new SupportCalculator(userSubsequences, nonUserSubsequences, drug, reaction);
             scoreList.add(s.calculateUnexLeverage());
         }
 
