@@ -47,11 +47,20 @@ public class App {
 
         List<DiagnosisScore> scoredEvents = new ArrayList<>();
 
-        ExecutorService executorService = Executors.newFixedThreadPool(10);
+        int numThreads = Math.min(100, numDrugs);
+
+        ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
+        List<DBDataGetter> dbDataGetterList = new ArrayList<>();
+        for(int i = 0; i < numThreads; i++){
+            dbDataGetterList.add(db.provideNewDBGetter());
+        }
+
         List<Future<List<DiagnosisScore>>> upcomingScores = new ArrayList<>();
 
-        for(String drug : drugNamesToCheck) {
-            upcomingScores.add(executorService.submit(new ScoredEventGetter(drug, db)));
+        for(int i = 0; i < drugNamesToCheck.size(); i++) {
+            upcomingScores.add(executorService.submit(
+                    new ScoredEventGetter(drugNamesToCheck.get(i),
+                            dbDataGetterList.get(i % numThreads))));
         }
 
         try {
@@ -64,7 +73,10 @@ public class App {
             System.err.println("Error on concurrent shutdown: " + e);
         }
 
-        dbConnection.closeConnection();
+        for (DBDataGetter aDB : dbDataGetterList) {
+            aDB.shutdown();
+        }
+
 
         Functions.displayTopTen(scoredEvents);
 

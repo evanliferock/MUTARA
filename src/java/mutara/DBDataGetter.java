@@ -10,19 +10,27 @@ public class DBDataGetter {
     }
     private DBConnection dbConnection;
     // stores the sequences once they are retrieved from the db
-    private List<List<Event>> sequences;
-    private List<String> drugNames;
+    private static List<List<Event>> sequences;
+    private static List<String> drugNames;
 
-    public DBDataGetter(String sshUsername, String sshPassword, String dbUsername,String dbPassword) {
-        this.dbConnection = new DBConnection(sshUsername, sshPassword, dbUsername, dbPassword);
+    static {
         sequences = null;
         drugNames = new ArrayList<>();
     }
 
+    public DBDataGetter(String sshUsername, String sshPassword, String dbUsername,String dbPassword) {
+        this.dbConnection = new DBConnection(sshUsername, sshPassword, dbUsername, dbPassword);
+
+    }
+
     public DBDataGetter(DBConnection dbConnection){
         this.dbConnection = dbConnection;
-        sequences = null;
-        drugNames = new ArrayList<>();
+
+    }
+
+    public DBDataGetter provideNewDBGetter(){
+        return new DBDataGetter(dbConnection.provideNewConnection());
+
     }
 
 
@@ -45,7 +53,6 @@ public class DBDataGetter {
     }
 
     public List<String> getReactionsForDrug(String drug){
-        setupData();
         String newDrug = drug.replace("'", "\\'");
         List<String> reactions = new ArrayList<>();
         ResultSet r = dbConnection.runQuery("SELECT DISTINCT(PT) FROM DRUG d, REACTION r " +
@@ -61,16 +68,19 @@ public class DBDataGetter {
 
 
     private void setupData(){
-        if(sequences == null) {
-            dbConnection.setupConnection();
-            Map<String, List<Event>> map = new HashMap<>();
-            getDrugs(map);
-            getDiagnosis(map);
-            setupDrugs();
+        synchronized (drugNames) {
+            if (sequences == null) {
+                dbConnection.setupConnection();
+                System.out.println("Setting up Data");
+                Map<String, List<Event>> map = new HashMap<>();
+                getDrugs(map);
+                getDiagnosis(map);
+                setupDrugs();
 
-            sequences = Collections.synchronizedList(new ArrayList<>(map.values()));
+                sequences = Collections.synchronizedList(new ArrayList<>(map.values()));
 
-            sortSequences();
+                sortSequences();
+            }
         }
     }
 
@@ -227,5 +237,9 @@ public class DBDataGetter {
 
         }
         return map;
+    }
+
+    public void shutdown(){
+        dbConnection.closeConnection();
     }
 }

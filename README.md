@@ -2,7 +2,7 @@
 This assignment, which is for Biomedical Informatics is an implementation of the MUTARA algorithm. However for this assignment
 It is to mine data that does not have temporal data. The data used was FDA’s spontaneous reports.
 
-Performance improved much since presentation. It takes approximately 2 mins to run 100 drugs now
+Performance improved much since presentation. It takes approximately 30s-100s to run 100 drugs now
 
 
 ### Running
